@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fade · Salon & Barber Booking UI Kit in Flutter · Live demo</title>
+  <meta name="description" content="Live demo of Fade, a salon and barber booking UI kit for Flutter: 30 screens, a full booking flow, and dark and light themes. Runs in a phone frame.">
+  <link rel="icon" type="image/png" href="app/favicon.png">
+  <style>
+    :root {
+      /* Always dark, whatever the viewer's system theme. */
+      color-scheme: dark;
+      --bg: #0d0d0d;
+      --bg-2: #2b1f10;
+      --text: #f2f2f2;
+      --muted: #8f8f8f;
+      --accent: #f2a33a;
+      --frame: #0a0a0a;
+      --frame-edge: #3a3a3a;
+      --app: #131313;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: radial-gradient(circle at 50% 35%, var(--bg-2), var(--bg) 62%);
+      color: var(--text);
+      font-family: -apple-system, system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Phone is laid out at real iPhone size, then scaled to fit the window. */
+    .stage { width: 417px; height: 876px; flex: none; transform-origin: center; }
+    .phone {
+      position: relative;
+      width: 417px;
+      height: 876px;
+      padding: 12px;
+      border-radius: 64px;
+      background: var(--frame);
+      box-shadow:
+        0 0 0 2px var(--frame-edge),
+        0 40px 90px rgba(0, 0, 0, 0.5),
+        0 0 120px rgba(242, 163, 58, 0.14);
+    }
+    /* Side buttons. */
+    .phone::before, .phone::after {
+      content: "";
+      position: absolute;
+      width: 4px;
+      background: var(--frame-edge);
+      border-radius: 2px;
+    }
+    .phone::before { left: -5px; top: 170px; height: 100px; }
+    .phone::after { right: -5px; top: 220px; height: 120px; }
+
+    .screen {
+      position: relative;
+      width: 393px;
+      height: 852px;
+      border-radius: 52px;
+      overflow: hidden;
+      background: var(--app);
+    }
+    /* The app draws its own status bar and home indicator, so they follow the theme. */
+    iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+    .island {
+      position: absolute;
+      top: 11px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 124px;
+      height: 36px;
+      border-radius: 20px;
+      background: #000;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .caption {
+      flex: none;
+      margin-top: 18px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+    }
+    .caption a { color: var(--text); text-decoration: none; cursor: pointer; }
+    .caption a:hover { text-decoration: underline; }
+    .caption a.on { color: var(--accent); font-weight: 600; }
+    .caption a.buy { color: var(--accent); font-weight: 600; }
+    .sep { margin: 0 8px; opacity: 0.5; }
+
+    /* On a real phone, skip the frame and run the app full screen. */
+    @media (max-width: 500px) {
+      body { display: block; }
+      .stage, .phone, .screen { width: 100%; height: 100%; transform: none !important; }
+      .phone { padding: 0; border-radius: 0; box-shadow: none; background: var(--app); }
+      .phone::before, .phone::after, .island, .caption { display: none; }
+      .screen { border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="phone">
+      <div class="screen">
+        <iframe id="app" title="Fade salon and barber booking app"></iframe>
+        <div class="island"></div>
+      </div>
+    </div>
+  </div>
+  <p class="caption">
+    Built with Flutter<span class="sep">·</span>
+    <a data-theme="dark">Dark</a> / <a data-theme="light">Light</a><span class="sep">·</span>
+    <a id="all">All 30 screens</a><span class="sep">·</span>
+    <a class="buy" href="https://yaqoobdeveloper.com/ui-kits/fade-salon-barber-booking-ui-kit" target="_blank" rel="noopener">Get the UI kit →</a>
+  </p>
+
+  <script>
+    const app = document.getElementById('app');
+    const framed = window.innerWidth > 500;
+    let theme = 'dark';
+
+    // In the phone frame the app gets iPhone-like safe areas; full screen on a real phone it doesn't.
+    function load(route) {
+      const params = [framed ? 'frame=1' : '', theme === 'light' ? 'theme=light' : ''].filter(Boolean).join('&');
+      app.src = `app/${params ? '?' + params : ''}${route ? '#' + route : ''}`;
+      document.querySelectorAll('[data-theme]').forEach((a) => a.classList.toggle('on', a.dataset.theme === theme));
+    }
+
+    function currentRoute() {
+      try { return app.contentWindow.location.hash.slice(1); } catch { return ''; }
+    }
+
+    document.querySelectorAll('[data-theme]').forEach((a) =>
+      a.addEventListener('click', () => {
+        if (a.dataset.theme === theme) return;
+        theme = a.dataset.theme;
+        const route = currentRoute();
+        load(route && route !== '/' ? route : '/main');
+      }),
+    );
+    document.getElementById('all').addEventListener('click', () => load('/catalog'));
+    load('');
+
+    const stage = document.getElementById('stage');
+    function fit() {
+      if (window.innerWidth <= 500) { stage.style.transform = ''; stage.style.margin = ''; return; }
+      const scale = Math.min(1, (window.innerHeight - 70) / 876, (window.innerWidth - 32) / 417);
+      stage.style.transform = `scale(${scale})`;
+      // Collapse the empty space a scaled-down element would otherwise leave.
+      const gap = (876 * (1 - scale)) / 2;
+      stage.style.margin = `${-gap}px 0`;
+    }
+    fit();
+    window.addEventListener('resize', fit);
+  </script>
+</body>
+</html>
